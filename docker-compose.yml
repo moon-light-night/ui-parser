@@ -1,0 +1,168 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ui-parser-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ui_parser}
+      POSTGRES_USER: ${POSTGRES_USER:-ui_parser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ui_parser} -d ${POSTGRES_DB:-ui_parser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: ui-parser-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ui-parser-redis
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ui-parser-backend
+    environment:
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ui_parser}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ui_parser}
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-screenshots}
+      ANALYZER_GRPC_HOST_ADDR: analyzer
+      ANALYZER_GRPC_PORT: 50061
+      ANALYZE_TIMEOUT_SECONDS: 600
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      analyzer:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    expose:
+      - "50051"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  analyzer:
+    build:
+      context: ./services/analyzer
+      dockerfile: Dockerfile
+    container_name: ui-parser-analyzer
+    environment:
+      ANALYZER_GRPC_HOST: 0.0.0.0
+      ANALYZER_GRPC_PORT: 50061
+      ANALYZER_HTTP_PORT: 8010
+      ANALYZER_MODE: ollama
+      ANALYSIS_TIMEOUT_SECONDS: 600
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: gemma4:31b-cloud
+      OLLAMA_VISION_MODEL: gemma4:31b-cloud
+      OLLAMA_CHAT_MODEL: gemma4:31b-cloud
+      OLLAMA_TIMEOUT: "600"
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_REGION: ${S3_REGION:-us-east-1}
+    depends_on:
+      minio:
+        condition: service_healthy
+    ports:
+      - "8010:8010"
+    expose:
+      - "50061"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  grpc-proxy:
+    image: envoyproxy/envoy:v1.31.2
+    container_name: ui-parser-grpc-proxy
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_GRPC_BASE_URL: ${VITE_APP_GRPC_BASE_URL}
+    container_name: ui-parser-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+      grpc-proxy:
+        condition: service_started
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package uiparser.system;
+
+option go_package = "uiparser/system";
+
+// SystemService provides health checks and system info
+service SystemService {
+  // Health check
+  rpc Health(HealthRequest) returns (HealthResponse);
+  
+  // Get system info
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+}
+
+// Health check request
+message HealthRequest {}
+
+// Health check response
+message HealthResponse {
+  bool healthy = 1;
+  string version = 2;
+  repeated ServiceStatus services = 3;
+}
+
+// Status of a dependent service
+message ServiceStatus {
+  string name = 1;
+  bool healthy = 2;
+  string message = 3;
+}
+
+// Get system info request
+message GetInfoRequest {}
+
+// Get system info response
+message GetInfoResponse {
+  string version = 1;
+  string environment = 2;
+  repeated string available_models = 3;
+}

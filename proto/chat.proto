@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package uiparser.chat;
+
+option go_package = "uiparser/chat";
+
+import "common.proto";
+
+// ChatService handles chat sessions and messages for screenshot discussions
+service ChatService {
+  // Create a new chat session for a screenshot
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+  
+  // List all chat sessions for a screenshot
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  
+  // Get a single chat session by ID
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  
+  // Delete a chat session
+  rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse);
+  
+  // List messages in a chat session
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  
+  // Send a message and receive streaming assistant reply
+  rpc SendMessage(SendMessageRequest) returns (stream SendMessageEvent);
+
+  // Resume streaming of an assistant reply after page reload or reconnect.
+  // Pass the ID of the assistant ChatMessage with status=streaming.
+  // Returns the same SendMessageEvent stream (chunks + done / error).
+  rpc ResumeMessageStream(ResumeMessageStreamRequest) returns (stream SendMessageEvent);
+}
+
+// Chat session entity
+message ChatSession {
+  string id = 1;
+  string screenshot_id = 2;
+  string title = 3;
+  int32 message_count = 4;
+  uiparser.common.Timestamp created_at = 5;
+  uiparser.common.Timestamp updated_at = 6;
+}
+
+// Chat message entity
+message ChatMessage {
+  string id = 1;
+  string session_id = 2;
+  uiparser.common.MessageRole role = 3;
+  string content = 4;
+  uiparser.common.MessageStatus status = 5;
+  string model_name = 6;
+  uiparser.common.Timestamp created_at = 7;
+}
+
+// CreateSession
+message CreateSessionRequest {
+  string screenshot_id = 1;
+  string title = 2;
+}
+
+message CreateSessionResponse {
+  ChatSession session = 1;
+}
+
+// ListSessions
+message ListSessionsRequest {
+  string screenshot_id = 1;
+  uiparser.common.PaginationRequest pagination = 2;
+}
+
+message ListSessionsResponse {
+  repeated ChatSession sessions = 1;
+  uiparser.common.PaginationResponse pagination = 2;
+}
+
+// GetSession
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionResponse {
+  ChatSession session = 1;
+}
+
+// DeleteSession
+message DeleteSessionRequest {
+  string session_id = 1;
+}
+
+message DeleteSessionResponse {
+  bool success = 1;
+}
+
+// ListMessages
+message ListMessagesRequest {
+  string session_id = 1;
+  uiparser.common.PaginationRequest pagination = 2;
+}
+
+message ListMessagesResponse {
+  repeated ChatMessage messages = 1;
+  uiparser.common.PaginationResponse pagination = 2;
+}
+
+// SendMessage - server streaming for assistant reply
+message SendMessageRequest {
+  string session_id = 1;
+  string content = 2;
+}
+
+// SendMessageEvent - streamed events for assistant reply
+message SendMessageEvent {
+  // Event type discriminator
+  oneof event {
+    MessageCreatedEvent message_created = 1;
+    AssistantChunkEvent assistant_chunk = 2;
+    AssistantDoneEvent assistant_done = 3;
+    ErrorEvent error = 4;
+  }
+}
+
+// User message was persisted
+message MessageCreatedEvent {
+  ChatMessage message = 1;
+}
+
+// Assistant is streaming a chunk of the reply
+message AssistantChunkEvent {
+  string chunk = 1;
+  int32 index = 2;
+}
+
+// Assistant reply is complete
+message AssistantDoneEvent {
+  ChatMessage message = 1;
+  // Non-empty when the session title was auto-generated on the first message
+  string new_session_title = 2;
+}
+
+// Error occurred during message processing
+message ErrorEvent {
+  string code = 1;
+  string message = 2;
+}
+
+// ResumeMessageStream - reconnect to an in-progress or completed assistant reply
+message ResumeMessageStreamRequest {
+  // ID of the assistant ChatMessage with status=streaming (or completed for replay)
+  string message_id = 1;
+}

@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 226 46% 97%;
+  --foreground: 224 44% 14%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 224 44% 14%;
+
+  --primary: 219 78% 43%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 216 40% 93%;
+  --secondary-foreground: 224 38% 20%;
+
+  --muted: 220 32% 92%;
+  --muted-foreground: 224 18% 36%;
+
+  --accent: 196 90% 92%;
+  --accent-foreground: 210 50% 18%;
+
+  --destructive: 6 78% 45%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 221 26% 84%;
+  --input: 221 26% 84%;
+  --ring: 219 78% 43%;
+
+  --radius: 0.95rem;
+}
+
+.dark {
+  --background: 224 32% 10%;
+  --foreground: 220 20% 92%;
+
+  --card: 224 28% 14%;
+  --card-foreground: 220 20% 92%;
+
+  --primary: 219 72% 58%;
+  --primary-foreground: 224 32% 10%;
+
+  --secondary: 224 24% 20%;
+  --secondary-foreground: 220 16% 80%;
+
+  --muted: 224 22% 18%;
+  --muted-foreground: 224 14% 56%;
+
+  --accent: 196 60% 22%;
+  --accent-foreground: 196 80% 88%;
+
+  --destructive: 6 68% 52%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 224 20% 22%;
+  --input: 224 20% 22%;
+  --ring: 219 72% 58%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply h-screen overflow-hidden bg-background text-foreground antialiased;
+    font-family: 'IBM Plex Sans', 'Manrope', 'Segoe UI', sans-serif;
+  }
+
+  #root {
+    @apply h-screen overflow-hidden;
+  }
+}

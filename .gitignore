@@ -1,0 +1,54 @@
+# Environment variables — NEVER commit the real .env
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.pytest_cache/
+.tox/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Virtual environments
+venv/
+.venv/
+*/venv/
+*/.venv/
+env/
+.env/
+
+# Distribution / build
+build/
+dist/
+*.egg
+
+# Node
+node_modules/
+dist/
+.turbo/
+.next/
+
+# IDE
+.vscode/
+.idea/
+*.sw?
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker overrides
+docker-compose.override.yml
+
+# AI assistant context — not for public repos
+CLAUDE.md

@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.0.0
+pydantic==2.5.0
+grpcio>=1.80.0
+grpcio-reflection>=1.80.0
+protobuf==6.33.0
+httpx==0.28.1
+sqlalchemy[asyncio]==2.0.40
+alembic==1.15.2
+psycopg[binary]==3.2.6
+boto3==1.37.35
+redis[hiredis]==5.2.1

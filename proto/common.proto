@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package uiparser.common;
+
+option go_package = "uiparser/common";
+
+// Timestamp wrapper for consistency
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// Pagination request
+message PaginationRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+// Pagination response
+message PaginationResponse {
+  string next_page_token = 1;
+  int32 total_count = 2;
+}
+
+// Screenshot status enum
+enum ScreenshotStatus {
+  SCREENSHOT_STATUS_UNSPECIFIED = 0;
+  SCREENSHOT_STATUS_UPLOADED = 1;
+  SCREENSHOT_STATUS_ANALYZING = 2;
+  SCREENSHOT_STATUS_COMPLETED = 3;
+  SCREENSHOT_STATUS_FAILED = 4;
+}
+
+// Chat message role enum
+enum MessageRole {
+  MESSAGE_ROLE_UNSPECIFIED = 0;
+  MESSAGE_ROLE_USER = 1;
+  MESSAGE_ROLE_ASSISTANT = 2;
+  MESSAGE_ROLE_SYSTEM = 3;
+}
+
+// Chat message status enum
+enum MessageStatus {
+  MESSAGE_STATUS_UNSPECIFIED = 0;
+  MESSAGE_STATUS_COMPLETED = 1;
+  MESSAGE_STATUS_STREAMING = 2;
+  MESSAGE_STATUS_FAILED = 3;
+}
+
+// Analysis severity enum
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW = 1;
+  SEVERITY_MEDIUM = 2;
+  SEVERITY_HIGH = 3;
+}
+
+// Analysis priority enum
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  PRIORITY_LOW = 1;
+  PRIORITY_MEDIUM = 2;
+  PRIORITY_HIGH = 3;
+}

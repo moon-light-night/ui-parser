@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package uiparser.screenshot;
+
+option go_package = "uiparser/screenshot";
+
+import "common.proto";
+
+// ScreenshotService handles screenshot upload, registration, listing, and analysis
+service ScreenshotService {
+  // Create a presigned URL for direct upload to S3
+  rpc CreateUploadUrl(CreateUploadUrlRequest) returns (CreateUploadUrlResponse);
+  
+  // Register a screenshot after successful upload
+  rpc RegisterScreenshot(RegisterScreenshotRequest) returns (RegisterScreenshotResponse);
+  
+  // List all screenshots with pagination
+  rpc ListScreenshots(ListScreenshotsRequest) returns (ListScreenshotsResponse);
+  
+  // Get a single screenshot by ID
+  rpc GetScreenshot(GetScreenshotRequest) returns (GetScreenshotResponse);
+  
+  // Trigger analysis for a screenshot
+  rpc StartAnalysis(StartAnalysisRequest) returns (StartAnalysisResponse);
+  
+  // Run analysis and stream status events back (started → completed | failed)
+  rpc RunAnalysis(RunAnalysisRequest) returns (stream RunAnalysisEvent);
+  
+  // Get the latest analysis for a screenshot
+  rpc GetLatestAnalysis(GetLatestAnalysisRequest) returns (GetLatestAnalysisResponse);
+
+  // Delete a screenshot and all associated data
+  rpc DeleteScreenshot(DeleteScreenshotRequest) returns (DeleteScreenshotResponse);
+}
+
+// Screenshot entity
+message Screenshot {
+  string id = 1;
+  string title = 2;
+  string original_filename = 3;
+  string mime_type = 4;
+  int64 file_size = 5;
+  string storage_bucket = 6;
+  string storage_key = 7;
+  string storage_region = 8;
+  string storage_url = 9;
+  uiparser.common.ScreenshotStatus status = 10;
+  uiparser.common.Timestamp created_at = 11;
+  uiparser.common.Timestamp updated_at = 12;
+}
+
+// Analysis section
+message AnalysisSection {
+  string name = 1;
+  string description = 2;
+}
+
+// UI issue found during analysis
+message UiIssue {
+  string title = 1;
+  uiparser.common.Severity severity = 2;
+  string description = 3;
+  string evidence = 4;
+  string recommendation = 5;
+}
+
+// UX suggestion
+message UxSuggestion {
+  string title = 1;
+  string description = 2;
+}
+
+// Implementation task
+message ImplementationTask {
+  string title = 1;
+  string description = 2;
+  uiparser.common.Priority priority = 3;
+}
+
+// Analysis entity
+message Analysis {
+  string id = 1;
+  string screenshot_id = 2;
+  string model_name = 3;
+  string screen_type = 4;
+  string summary = 5;
+  repeated AnalysisSection sections = 6;
+  repeated UiIssue ui_issues = 7;
+  repeated UxSuggestion ux_suggestions = 8;
+  repeated ImplementationTask implementation_tasks = 9;
+  string error_message = 10;
+  uiparser.common.Timestamp created_at = 11;
+  uiparser.common.Timestamp updated_at = 12;
+}
+
+// CreateUploadUrl
+message CreateUploadUrlRequest {
+  string filename = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+}
+
+message CreateUploadUrlResponse {
+  string upload_url = 1;
+  string storage_bucket = 2;
+  string storage_key = 3;
+  int64 expires_at = 4;
+}
+
+// RegisterScreenshot
+message RegisterScreenshotRequest {
+  string original_filename = 1;
+  string mime_type = 2;
+  int64 file_size = 3;
+  string storage_bucket = 4;
+  string storage_key = 5;
+  string title = 6;
+}
+
+message RegisterScreenshotResponse {
+  Screenshot screenshot = 1;
+}
+
+// ListScreenshots
+message ListScreenshotsRequest {
+  uiparser.common.PaginationRequest pagination = 1;
+}
+
+message ListScreenshotsResponse {
+  repeated Screenshot screenshots = 1;
+  uiparser.common.PaginationResponse pagination = 2;
+}
+
+// GetScreenshot
+message GetScreenshotRequest {
+  string screenshot_id = 1;
+}
+
+message GetScreenshotResponse {
+  Screenshot screenshot = 1;
+}
+
+// StartAnalysis
+message StartAnalysisRequest {
+  string screenshot_id = 1;
+  string model_name = 2;
+}
+
+message StartAnalysisResponse {
+  string analysis_id = 1;
+  uiparser.common.ScreenshotStatus status = 2;
+}
+
+// GetLatestAnalysis
+message GetLatestAnalysisRequest {
+  string screenshot_id = 1;
+}
+
+message GetLatestAnalysisResponse {
+  Analysis analysis = 1;
+}
+
+// RunAnalysis — streaming analysis that yields status events
+message RunAnalysisRequest {
+  string screenshot_id = 1;
+  string model_name = 2;
+}
+
+message RunAnalysisEvent {
+  oneof event {
+    RunAnalysisStartedEvent started = 1;
+    RunAnalysisCompletedEvent completed = 2;
+    RunAnalysisFailedEvent failed = 3;
+  }
+}
+
+message RunAnalysisStartedEvent {
+  string analysis_id = 1;
+}
+
+message RunAnalysisCompletedEvent {
+  Analysis analysis = 1;
+  Screenshot screenshot = 2;
+}
+
+message RunAnalysisFailedEvent {
+  string error_message = 1;
+}
+
+// DeleteScreenshot
+message DeleteScreenshotRequest {
+  string screenshot_id = 1;
+}
+
+message DeleteScreenshotResponse {}
