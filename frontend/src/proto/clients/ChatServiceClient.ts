@@ -249,15 +249,12 @@ export class ChatServiceClient {
     return new Promise((resolve, reject) => {
       let userMessage: ChatMessage | null = null;
       let assistantMessage: ChatMessage | null = null;
-      let fullContent = '';
 
       const stream = this.sendMessage(request, {
         onMessageCreated: (message) => {
           userMessage = message;
         },
-        onChunk: (chunk) => {
-          fullContent += chunk;
-        },
+        onChunk: () => {},
         onDone: (message) => {
           assistantMessage = message;
         },

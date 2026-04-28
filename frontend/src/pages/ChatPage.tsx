@@ -1,10 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Loader2, MessageSquare } from 'lucide-react';
-import { screenshotApi, chatApi } from '@/api';
-import type { ChatSession, ChatMessage } from '@/proto/generated/chat';
-import type { Screenshot } from '@/proto/generated/screenshot';
-import { MessageRole, MessageStatus } from '@/proto/generated/common';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ChatComposer } from '@/components/chat/ChatComposer';
@@ -12,132 +8,62 @@ import { ChatThread } from '@/components/chat/ChatThread';
 import { SessionSidebar } from '@/components/chat/SessionSidebar';
 import { useChatSend } from '@/hooks/useChatSend';
 import { AppHeader } from '@/components/AppHeader';
-import { LOCALE, PAGE_SIZE_SESSIONS, PAGE_SIZE_MESSAGES } from '@/lib/constants';
+import { useChatStore } from '@/store';
 
 export default function ChatPage() {
   const { id: screenshotId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [screenshot, setScreenshot] = useState<Screenshot | null>(null);
+  const {
+    screenshot,
+    sessions,
+    sessionsLoading,
+    activeSessionId,
+    creatingSession,
+    messages,
+    loadedSessionId,
+    inputValue,
+    loadForScreenshot,
+    loadMessages,
+    setActiveSessionId,
+    setInputValue,
+    addMessage,
+    handleAssistantDone,
+    createSession,
+    deleteSession,
+  } = useChatStore();
 
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [creatingSession, setCreatingSession] = useState(false);
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loadedSessionId, setLoadedSessionId] = useState<string | null>(null);
   const messagesLoading = !!activeSessionId && loadedSessionId !== activeSessionId;
   const visibleMessages = loadedSessionId === activeSessionId ? messages : [];
 
-  const [inputValue, setInputValue] = useState('');
-
   const threadBottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevActiveSessionRef = useRef<string | null>(null);
 
   const { sending, streamingContent, setStreamingContent, sendError, sendMessage, resumeStream, resetSendError } = useChatSend({
     activeSessionId,
-    onMessageCreated: (msg) => setMessages((prev) => [...prev, msg]),
-    onAssistantDone: (msg, newTitle, countDelta = 2) => {
-      setMessages((prev) => [...prev, msg]);
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === activeSessionId
-            ? {
-                ...s,
-                messageCount: (s.messageCount ?? 0) + countDelta,
-                ...(newTitle ? { title: newTitle } : {}),
-              }
-            : s
-        )
-      );
-    },
+    onMessageCreated: (msg) => addMessage(msg),
+    onAssistantDone: (msg, newTitle, countDelta = 2) => handleAssistantDone(msg, newTitle, countDelta),
   });
 
   useEffect(() => {
     if (!screenshotId) return;
-    screenshotApi
-      .getScreenshot({ screenshotId })
-      .then(({ response: res }) => setScreenshot(res.screenshot ?? null))
-      .catch(() => setScreenshot(null));
+    loadForScreenshot(screenshotId, (messageId) => resumeStream(messageId));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenshotId]);
 
   useEffect(() => {
-    if (!screenshotId) return;
-    chatApi
-      .listSessions({ screenshotId, pagination: { pageSize: PAGE_SIZE_SESSIONS, pageToken: '' } })
-      .then(({ response: res }) => {
-        const list = res.sessions ?? [];
-        setSessions(list);
-        setSessionsLoading(false);
-        setActiveSessionId((prev) => (prev === null && list.length > 0 ? list[0].id : prev));
-      })
-      .catch(() => setSessionsLoading(false));
-  }, [screenshotId]);
-
-  useEffect(() => {
-    if (!activeSessionId) return;
-    const sessionId = activeSessionId;
-    chatApi
-      .listMessages({ sessionId, pagination: { pageSize: PAGE_SIZE_MESSAGES, pageToken: '' } })
-      .then(({ response: res }) => {
-        const all = res.messages ?? [];
-
-        const streamingMsg = [...all].reverse().find(
-          (m) => m.role === MessageRole.ASSISTANT && m.status === MessageStatus.STREAMING,
-        );
-
-        if (streamingMsg) {
-          setMessages(all.filter((m) => m.id !== streamingMsg.id));
-          setLoadedSessionId(sessionId);
-          resumeStream(streamingMsg.id);
-        } else {
-          setMessages(all);
-          setLoadedSessionId(sessionId);
-        }
-      })
-      .catch(() => setLoadedSessionId(sessionId));
+    if (!activeSessionId || activeSessionId === prevActiveSessionRef.current) return;
+    if (loadedSessionId !== activeSessionId) {
+      loadMessages(activeSessionId, (messageId) => resumeStream(messageId));
+    }
+    prevActiveSessionRef.current = activeSessionId;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSessionId]);
 
   useEffect(() => {
     threadBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
-
-  const handleNewSession = async () => {
-    if (!screenshotId || creatingSession) return;
-    setCreatingSession(true);
-    try {
-      const { response: res } = await chatApi.createSession({
-        screenshotId,
-        title: `Чат ${new Date().toLocaleString(LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
-      });
-      const newSession = res.session;
-      if (newSession) {
-        setSessions((prev) => [newSession, ...prev]);
-        setActiveSessionId(newSession.id);
-        setMessages([]);
-      }
-    } catch (err) {
-      console.error('Failed to create session', err);
-    } finally {
-      setCreatingSession(false);
-    }
-  };
-
-  const handleDeleteSession = async (sessionId: string) => {
-    try {
-      await chatApi.deleteSession({ sessionId });
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      if (activeSessionId === sessionId) {
-        const remaining = sessions.filter((s) => s.id !== sessionId);
-        setActiveSessionId(remaining.length > 0 ? remaining[0].id : null);
-        setMessages([]);
-      }
-    } catch (err) {
-      console.error('Failed to delete session', err);
-    }
-  };
 
   const handleSend = () => {
     sendMessage(inputValue);
@@ -175,7 +101,7 @@ export default function ChatPage() {
           sessionsLoading={sessionsLoading}
           activeSessionId={activeSessionId}
           creatingSession={creatingSession}
-          onNewSession={handleNewSession}
+          onNewSession={() => createSession()}
           onSelectSession={(id) => {
             if (id !== activeSessionId) {
               setActiveSessionId(id);
@@ -183,7 +109,7 @@ export default function ChatPage() {
               resetSendError();
             }
           }}
-          onDeleteSession={handleDeleteSession}
+          onDeleteSession={(id) => deleteSession(id)}
         />
 
         <main className="flex-1 flex flex-col min-h-0">
@@ -200,7 +126,7 @@ export default function ChatPage() {
               <p className="text-sm text-muted-foreground max-w-xs mb-5">
                 Создайте новую сессию, чтобы задавать вопросы о скриншоте и его анализе.
               </p>
-              <Button onClick={handleNewSession} disabled={creatingSession}>
+              <Button onClick={() => createSession()} disabled={creatingSession}>
                 {creatingSession ? (
                   <><Loader2 className="w-4 h-4 animate-spin" />Создание…</>
                 ) : (

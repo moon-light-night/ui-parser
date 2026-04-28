@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ImageIcon, Upload, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
-import { screenshotApi } from '@/api';
 import type { Screenshot } from '@/proto/generated/screenshot';
 import { ScreenshotStatus } from '@/proto/generated/common';
 import { screenshotImageUrl, formatBytes } from '@/components/screenshot/analysisHelpers';
-import { LOCALE, PAGE_SIZE_SCREENSHOTS } from '@/lib/constants';
+import { LOCALE } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -19,8 +18,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import UploadDialog from '@/components/UploadDialog';
+const UploadDialog = lazy(() => import('@/components/UploadDialog'));
 import { AppHeader } from '@/components/AppHeader';
+import { useScreenshotStore } from '@/store';
 
 function statusBadge(status: ScreenshotStatus) {
   switch (status) {
@@ -112,45 +112,22 @@ function ScreenshotCard({
 }
 
 export default function ScreenshotListPage() {
-  const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<Screenshot | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const {
+    screenshots,
+    loaded,
+    error,
+    showUpload,
+    pendingDelete,
+    deleting,
+    load,
+    setShowUpload,
+    setPendingDelete,
+    confirmDelete,
+  } = useScreenshotStore();
+
   const navigate = useNavigate();
 
-  const load = useCallback((showSpinner = false) => {
-    if (showSpinner) setLoaded(false);
-    setError(null);
-    screenshotApi
-      .listScreenshots({ pagination: { pageSize: PAGE_SIZE_SCREENSHOTS, pageToken: '' } })
-      .then(({ response: res }) => { setScreenshots(res.screenshots); setLoaded(true); })
-      .catch((err) => { setError(err.message || 'Не удалось загрузить скриншоты'); setLoaded(true); });
-  }, []);
-
-  useEffect(() => {
-    screenshotApi
-      .listScreenshots({ pagination: { pageSize: PAGE_SIZE_SCREENSHOTS, pageToken: '' } })
-      .then(({ response: res }) => { setScreenshots(res.screenshots); setLoaded(true); })
-      .catch((err) => { setError(err.message || 'Не удалось загрузить скриншоты'); setLoaded(true); });
-  }, []);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!pendingDelete) return;
-    setDeleting(true);
-    try {
-      await screenshotApi.deleteScreenshot({ screenshotId: pendingDelete.id });
-      setScreenshots((prev) => prev.filter((s) => s.id !== pendingDelete.id));
-      setPendingDelete(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Не удалось удалить скриншот';
-      setError(msg);
-      setPendingDelete(null);
-    } finally {
-      setDeleting(false);
-    }
-  }, [pendingDelete]);
+  useEffect(() => load(), []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -220,10 +197,12 @@ export default function ScreenshotListPage() {
       </main>
 
       {showUpload && (
-        <UploadDialog
-          onClose={() => setShowUpload(false)}
-          onUploaded={() => { setShowUpload(false); load(); }}
-        />
+        <Suspense fallback={null}>
+          <UploadDialog
+            onClose={() => setShowUpload(false)}
+            onUploaded={() => { setShowUpload(false); load(); }}
+          />
+        </Suspense>
       )}
 
       <Dialog open={!!pendingDelete} onOpenChange={(open) => { if (!open && !deleting) setPendingDelete(null); }}>
@@ -245,7 +224,7 @@ export default function ScreenshotListPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDeleteConfirm}
+              onClick={confirmDelete}
               disabled={deleting}
             >
               {deleting ? 'Удаление…' : 'Удалить'}

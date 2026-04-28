@@ -9,8 +9,13 @@ React SPA на Vite + TypeScript + Tailwind CSS + shadcn/ui.
 - **React 19** + **TypeScript**
 - **Vite** — сборщик и dev-сервер
 - **Tailwind CSS** — утилитарные стили
-- **shadcn/ui** — UI-примитивы
+- **shadcn/ui** — UI-примитивы (компоненты в `src/components/ui/`, исключены из линтинга)
+- **Zustand** — управление глобальным состоянием
 - **gRPC-Web** — связь с API-сервисом через Envoy
+
+## Управление состоянием
+
+Глобальное состояние реализовано через [Zustand](https://github.com/pmndrs/zustand). Хранилища находятся в `src/store/`
 
 ## Запуск в разработке
 
@@ -27,6 +32,23 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Проверка типов
+
+```bash
+npm run checkTypes
+```
+
+## Линтинг
+
+```bash
+npm run lint        
+npm run lint:fix    
+```
+
+Из линтинга исключены:
+- `src/proto/generated/**` — сгенерированные proto-клиенты
+- `src/components/ui/**` — компоненты shadcn/ui
 
 ## Тесты
 

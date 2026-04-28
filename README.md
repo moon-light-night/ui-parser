@@ -20,15 +20,15 @@ API service  (Python, port 50051)
             └── Ollama HTTP API (optional, port 11434)
 ```
 
-| Сервис       | Технология                                                 |
-|--------------|------------------------------------------------------------|
-| Frontend     | React 19, TypeScript, Vite, Tailwind, shadcn/ui, gRPC-Web  |
-| API          | Python 3.10, gRPC, FastAPI, SQLAlchemy 2, psycopg          |
-| Analyzer     | Python 3.10, gRPC, Pydantic, httpx                         |
-| Database     | Postgres 16                                                |
-| Object store | MinIO (S3-compatible)                                      |
-| Gateway      | Envoy 1.31.2                                               |
-| AI           | Ollama (локально)                                          |
+| Сервис       | Технология                                                         |
+|--------------|--------------------------------------------------------------------|
+| Frontend     | React 19, TypeScript, Vite, Tailwind, shadcn/ui, Zustand, gRPC-Web |
+| API          | Python 3.10, gRPC, FastAPI, SQLAlchemy 2, psycopg                  |
+| Analyzer     | Python 3.10, gRPC, Pydantic, httpx                                 |
+| Database     | Postgres 16                                                        |
+| Object store | MinIO (S3-compatible)                                              |
+| Gateway      | Envoy 1.31.2                                                       |
+| AI           | Ollama (локально)                                                  |
 
 ---
 
@@ -172,14 +172,15 @@ services/
     tests/
 backend/               - публичный gRPC API service
   app/
-    grpc/              - gRPC-сервер, сервисеры (screenshot_service.py, chat_service.py) и сгенерированные заглушки
+    grpc/              - gRPC-сервер, сервисеры screenshot_service.py, chat_service.py
     models/            - SQLAlchemy-модели
     storage.py         - вспомогательные функции presigned URL для MinIO
     redis_client.py    - клиент Redis для потоков чата
   tests/
 frontend/
   src/
-    grpc/              - gRPC-Web клиенты + сгенерированные типы
+    proto/             - gRPC-Web клиенты, сгенерированные типы и type-safe обёртки
+    store/             - Zustand-хранилища
     pages/             - основные страницы приложения
     components/        - основные компоненты и UI-примитивы
       __tests__/       - тесты компонентов (Vitest)

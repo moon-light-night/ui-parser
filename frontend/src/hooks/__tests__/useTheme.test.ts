@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTheme, THEME } from '../useTheme';
+import { useThemeStore } from '@/store';
 
 function stubMatchMedia(prefersDark: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -24,6 +25,7 @@ describe('useTheme', () => {
     localStorage.clear();
     document.documentElement.classList.remove(THEME.DARK, THEME.LIGHT);
     stubMatchMedia(false);
+    useThemeStore.setState({ theme: THEME.LIGHT });
   });
 
   it('по умолчанию использует светлую тему если нет prefers-color-scheme dark', () => {
@@ -31,8 +33,9 @@ describe('useTheme', () => {
     expect(result.current.theme).toBe(THEME.LIGHT);
   });
 
-  it('читает тему из localStorage', () => {
-    localStorage.setItem('ui-parser-theme', THEME.DARK);
+  it('читает тему из localStorage', async () => {
+    localStorage.setItem('ui-parser-theme', JSON.stringify({ state: { theme: THEME.DARK }, version: 0 }));
+    await useThemeStore.persist.rehydrate();
     const { result } = renderHook(() => useTheme());
     expect(result.current.theme).toBe(THEME.DARK);
   });
@@ -55,11 +58,14 @@ describe('useTheme', () => {
   it('сохраняет тему в localStorage при toggle', () => {
     const { result } = renderHook(() => useTheme());
     act(() => result.current.toggle());
-    expect(localStorage.getItem('ui-parser-theme')).toBe(THEME.DARK);
+    const stored = localStorage.getItem('ui-parser-theme');
+    const parsed = stored ? JSON.parse(stored) : null;
+    expect(parsed?.state?.theme).toBe(THEME.DARK);
   });
 
   it('использует тёмную тему если prefers-color-scheme dark и нет сохранённой', () => {
     stubMatchMedia(true);
+    useThemeStore.setState({ theme: THEME.DARK });
 
     const { result } = renderHook(() => useTheme());
     expect(result.current.theme).toBe(THEME.DARK);
