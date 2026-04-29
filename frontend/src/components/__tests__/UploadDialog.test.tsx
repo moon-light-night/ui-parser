@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UploadDialog from '../UploadDialog';
 
@@ -29,14 +29,15 @@ describe('UploadDialog — валидация типа файла', () => {
   it('показывает ошибку для неподдерживаемого типа', async () => {
     renderDialog();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [makeFile('doc.pdf', 'application/pdf')] } });
+    const user = userEvent.setup({ applyAccept: false });
+    await user.upload(input, makeFile('doc.pdf', 'application/pdf'));
     expect(await screen.findByText(/Неподдерживаемый тип файла/)).toBeInTheDocument();
   });
 
   it('принимает корректный тип image/png', async () => {
     renderDialog();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [makeFile('shot.png', 'image/png')] } });
+    await userEvent.upload(input, makeFile('shot.png', 'image/png'));
     expect(await screen.findByText('shot.png')).toBeInTheDocument();
     expect(screen.queryByText(/Неподдерживаемый тип файла/)).not.toBeInTheDocument();
   });

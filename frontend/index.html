@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UI Parser</title>
+    <script>
+      (function () {
+        try {
+          var stored = JSON.parse(localStorage.getItem('ui-parser-theme') || '{}');
+          var theme = stored.state && stored.state.theme;
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

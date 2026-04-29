@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatComposer } from '../ChatComposer';
 
@@ -11,11 +11,8 @@ vi.mock('@/components/ui/tooltip', () => ({
 
 function setup(overrides: Partial<React.ComponentProps<typeof ChatComposer>> = {}) {
   const props = {
-    value: '',
-    onChange: vi.fn(),
     onSend: vi.fn(),
     sending: false,
-    textareaRef: { current: null },
     ...overrides,
   };
   render(<ChatComposer {...props} />);
@@ -29,44 +26,73 @@ describe('ChatComposer', () => {
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
-  it('кнопка disabled если value пустой', () => {
-    setup({ value: '' });
+  it('кнопка disabled если textarea пустая', () => {
+    setup();
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('кнопка disabled если sending=true', () => {
-    setup({ value: 'hello', sending: true });
+  it('кнопка disabled если sending=true', async () => {
+    setup({ sending: true });
+    await userEvent.type(screen.getByRole('textbox'), 'hello');
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('кнопка активна если value не пустой и sending=false', () => {
-    setup({ value: 'hello', sending: false });
+  it('кнопка активна после ввода текста', async () => {
+    setup();
+    await userEvent.type(screen.getByRole('textbox'), 'hello');
     expect(screen.getByRole('button')).not.toBeDisabled();
   });
 
-  it('Enter вызывает onSend', async () => {
+  it('Enter вызывает onSend с текстом и очищает поле', async () => {
     const onSend = vi.fn();
-    setup({ value: 'Hello', onSend });
-    await userEvent.type(screen.getByRole('textbox'), '{Enter}');
+    setup({ onSend });
+    const textarea = screen.getByRole('textbox');
+    await userEvent.type(textarea, 'Hello');
+    await userEvent.type(textarea, '{Enter}');
     expect(onSend).toHaveBeenCalledOnce();
+    expect(onSend).toHaveBeenCalledWith('Hello');
+    await waitFor(() => expect(textarea).toHaveValue(''));
   });
 
   it('Shift+Enter не вызывает onSend', async () => {
     const onSend = vi.fn();
-    setup({ value: 'Hello', onSend });
+    setup({ onSend });
+    await userEvent.type(screen.getByRole('textbox'), 'Hello');
     await userEvent.type(screen.getByRole('textbox'), '{Shift>}{Enter}{/Shift}');
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it('клик по кнопке вызывает onSend', async () => {
+  it('клик по кнопке вызывает onSend с текстом', async () => {
     const onSend = vi.fn();
-    setup({ value: 'Hello', onSend });
+    setup({ onSend });
+    await userEvent.type(screen.getByRole('textbox'), 'Hello');
     await userEvent.click(screen.getByRole('button'));
-    expect(onSend).toHaveBeenCalledOnce();
+    expect(onSend).toHaveBeenCalledWith('Hello');
   });
 
   it('textarea задизейблена во время sending', () => {
     setup({ sending: true });
     expect(screen.getByRole('textbox')).toBeDisabled();
+  });
+
+  it('не вызывает onSend для сообщения только из пробелов', async () => {
+    const onSend = vi.fn();
+    setup({ onSend });
+    await userEvent.type(screen.getByRole('textbox'), '   ');
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('показывает счётчик символов вблизи лимита', async () => {
+    setup();
+    const longText = 'a'.repeat(6000);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: longText } });
+    await waitFor(() =>
+      expect(screen.getByText(new RegExp(`${longText.length}`))).toBeInTheDocument(),
+    );
+  });
+
+  it('показывает sendError из пропсов', () => {
+    setup({ sendError: 'Сеть недоступна' });
+    expect(screen.getByText('Сеть недоступна')).toBeInTheDocument();
   });
 });

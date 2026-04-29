@@ -22,11 +22,9 @@ export default function ChatPage() {
     creatingSession,
     messages,
     loadedSessionId,
-    inputValue,
     loadForScreenshot,
     loadMessages,
     setActiveSessionId,
-    setInputValue,
     addMessage,
     handleAssistantDone,
     createSession,
@@ -37,7 +35,6 @@ export default function ChatPage() {
   const visibleMessages = loadedSessionId === activeSessionId ? messages : [];
 
   const threadBottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevActiveSessionRef = useRef<string | null>(null);
 
   const { sending, streamingContent, setStreamingContent, sendError, sendMessage, resumeStream, resetSendError } = useChatSend({
@@ -64,11 +61,6 @@ export default function ChatPage() {
   useEffect(() => {
     threadBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
-
-  const handleSend = () => {
-    sendMessage(inputValue);
-    setInputValue('');
-  };
 
   return (
     <TooltipProvider>
@@ -145,11 +137,9 @@ export default function ChatPage() {
               />
 
               <ChatComposer
-                value={inputValue}
-                onChange={setInputValue}
-                onSend={handleSend}
+                onSend={sendMessage}
                 sending={sending}
-                textareaRef={textareaRef}
+                sendError={sendError}
               />
             </>
           )}

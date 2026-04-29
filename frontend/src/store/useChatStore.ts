@@ -17,8 +17,6 @@ interface ChatState {
   messages: ChatMessage[];
   loadedSessionId: string | null;
 
-  inputValue: string;
-
   loadForScreenshot: (
     screenshotId: string,
     onResumeStream?: (messageId: string) => void,
@@ -30,7 +28,6 @@ interface ChatState {
   ) => void;
 
   setActiveSessionId: (id: string | null) => void;
-  setInputValue: (value: string) => void;
 
   addMessage: (msg: ChatMessage) => void;
   handleAssistantDone: (msg: ChatMessage, newTitle?: string, countDelta?: number) => void;
@@ -50,7 +47,6 @@ const initialState = {
   creatingSession: false,
   messages: [],
   loadedSessionId: null,
-  inputValue: '',
 };
 
 export const useChatStore = create<ChatState>()((set, get) => ({
@@ -105,8 +101,6 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   },
 
   setActiveSessionId: (id) => set({ activeSessionId: id }),
-
-  setInputValue: (value) => set({ inputValue: value }),
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
 
