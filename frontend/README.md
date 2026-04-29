@@ -9,8 +9,10 @@ React SPA на Vite + TypeScript + Tailwind CSS + shadcn/ui.
 - **React 19** + **TypeScript**
 - **Vite** — сборщик и dev-сервер
 - **Tailwind CSS** — утилитарные стили
-- **shadcn/ui** — UI-примитивы (компоненты в `src/components/ui/`, исключены из линтинга)
+- **shadcn/ui** — UI-примитивы (компоненты в `src/components/ui/`)
 - **Zustand** — управление глобальным состоянием
+- **React Hook Form** — управление формами
+- **Zod** — валидация схем и типов
 - **gRPC-Web** — связь с API-сервисом через Envoy
 
 ## Управление состоянием

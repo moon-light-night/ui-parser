@@ -22,7 +22,7 @@ API service  (Python, port 50051)
 
 | Сервис       | Технология                                                         |
 |--------------|--------------------------------------------------------------------|
-| Frontend     | React 19, TypeScript, Vite, Tailwind, shadcn/ui, Zustand, gRPC-Web |
+| Frontend     | React 19, TypeScript, Vite, Tailwind, shadcn/ui, Zustand, React Hook Form, Zod, gRPC-Web |
 | API          | Python 3.10, gRPC, FastAPI, SQLAlchemy 2, psycopg                  |
 | Analyzer     | Python 3.10, gRPC, Pydantic, httpx                                 |
 | Database     | Postgres 16                                                        |
