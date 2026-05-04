@@ -6,20 +6,6 @@
 
 ## Архитектура
 
-```
-Browser (React + grpc-web)
-        │
-        ▼  HTTP/1.1 (gRPC-Web)
-Envoy (port 8080)
-        │
-        ▼  gRPC
-API service  (Python, port 50051)
-  ├── Postgres (SQLAlchemy, Alembic)
-  ├── MinIO S3 (presigned upload/download)
-  └── Analyzer service (internal gRPC, port 50061)
-            └── Ollama HTTP API (optional, port 11434)
-```
-
 | Сервис       | Технология                                                         |
 |--------------|--------------------------------------------------------------------|
 | Frontend     | React 19, TypeScript, Vite, Tailwind, shadcn/ui, Zustand, React Hook Form, Zod, gRPC-Web |
