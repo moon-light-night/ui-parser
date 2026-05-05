@@ -31,7 +31,7 @@
 git clone <repo-url>
 cd ui-parser
 cp .env.example .env   # измените при необходимости или оставьте значения по умолчанию для локальной разработки
-docker compose up --build -d
+make up
 ```
 
 Откройте http://localhost:3000 в браузере.

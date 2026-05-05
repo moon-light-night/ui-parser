@@ -11,7 +11,7 @@ export function AppHeader({ right }: AppHeaderProps) {
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="bg-card border-b border-border px-6 h-14 flex items-center justify-between shrink-0 z-10">
+    <header className="bg-card border-b border-border px-4 sm:px-6 h-12 sm:h-14 flex items-center justify-between shrink-0 z-10">
       <Link
         to="/"
         className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"

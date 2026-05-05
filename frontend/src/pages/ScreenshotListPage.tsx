@@ -141,14 +141,14 @@ export default function ScreenshotListPage() {
             )}
             <Button onClick={() => setShowUpload(true)} size="sm">
               <Upload className="w-4 h-4" />
-              Загрузить
+              <span className="hidden sm:inline">Загрузить</span>
             </Button>
           </>
         }
       />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />

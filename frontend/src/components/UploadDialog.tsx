@@ -146,7 +146,7 @@ export default function UploadDialog({ onClose, onUploaded }: Props) {
               {previewFile ? (
                 <div className="flex flex-col items-center gap-2">
                   <ImageIcon className="w-8 h-8 text-primary" />
-                  <p className="text-sm font-medium text-foreground">{previewFile.name}</p>
+                  <p className="text-sm font-medium text-foreground break-all">{previewFile.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {(previewFile.size / 1024).toFixed(0)} KB · {previewFile.type.replace('image/', '')}
                   </p>

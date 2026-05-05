@@ -93,19 +93,19 @@ export default function ScreenshotDetailPage() {
           <>
             <Button variant="outline" size="sm" onClick={() => navigate(`/screenshots/${id}/chat`)}>
               <MessageSquare className="w-4 h-4" />
-              Чат
+              <span className="hidden sm:inline">Чат</span>
             </Button>
             {isAnalyzing ? (
               <Button size="sm" disabled>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Анализируется…
+                <span className="hidden sm:inline">Анализируется…</span>
               </Button>
             ) : (
               <Button size="sm" onClick={runAnalysis}>
                 {analysis ? (
-                  <><RefreshCw className="w-4 h-4" />Повторить анализ</>
+                  <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Повторить анализ</span></>
                 ) : (
-                  <><Sparkles className="w-4 h-4" />Анализировать</>
+                  <><Sparkles className="w-4 h-4" /><span className="hidden sm:inline">Анализировать</span></>
                 )}
               </Button>
             )}
@@ -119,18 +119,18 @@ export default function ScreenshotDetailPage() {
           Скриншоты
         </Button>
         <span>/</span>
-        <span className="text-foreground font-medium truncate max-w-[300px]">
+        <span className="text-foreground font-medium truncate max-w-[150px] sm:max-w-[300px]">
           {screenshot.title || screenshot.originalFilename}
         </span>
       </div>
 
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="overflow-y-auto">
+      <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="lg:h-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+          <div className="lg:overflow-y-auto">
             <ScreenshotPreview screenshot={screenshot} isAnalyzing={isAnalyzing} />
           </div>
 
-          <div className="overflow-y-auto pr-1 space-y-4">
+          <div className="lg:overflow-y-auto pr-1 space-y-4">
             {analysisError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

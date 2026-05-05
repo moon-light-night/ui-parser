@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, MessageSquare, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ChatComposer } from '@/components/chat/ChatComposer';
@@ -13,6 +13,7 @@ import { useChatStore } from '@/store';
 export default function ChatPage() {
   const { id: screenshotId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const {
     screenshot,
@@ -73,13 +74,16 @@ export default function ChatPage() {
         }
       />
 
-      <div className="bg-card border-b border-border px-4 h-9 flex items-center gap-1.5 text-sm text-muted-foreground shrink-0">
+      <div className="bg-card border-b border-border px-2 sm:px-4 h-9 flex items-center gap-1 sm:gap-1.5 text-sm text-muted-foreground shrink-0">
+        <Button variant="ghost" size="sm" className="h-6 px-1.5 sm:hidden" onClick={() => setShowSidebar((v) => !v)} title="Сессии">
+          <PanelLeft className="w-4 h-4" />
+        </Button>
         <Button variant="ghost" size="sm" className="h-6 px-2 gap-1.5 text-xs" onClick={() => navigate(`/screenshots/${screenshotId}`)}>
           <ArrowLeft className="w-3 h-3" />
           Анализ
         </Button>
         <span>/</span>
-        <span className="truncate max-w-[300px]">
+        <span className="truncate max-w-[130px] sm:max-w-[300px]">
           {screenshot
             ? screenshot.title || screenshot.originalFilename
             : <Loader2 className="w-3 h-3 animate-spin inline-block" />
@@ -87,13 +91,20 @@ export default function ChatPage() {
         </span>
       </div>
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
+        {showSidebar && (
+          <div
+            className="fixed inset-0 z-10 bg-black/40 sm:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
         <SessionSidebar
           sessions={sessions}
           sessionsLoading={sessionsLoading}
           activeSessionId={activeSessionId}
           creatingSession={creatingSession}
-          onNewSession={() => createSession()}
+          isOpen={showSidebar}
+          onNewSession={async () => { await createSession(); setShowSidebar(false); }}
           onSelectSession={(id) => {
             if (id !== activeSessionId) {
               setActiveSessionId(id);
