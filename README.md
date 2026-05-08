@@ -30,7 +30,7 @@
 ```bash
 git clone <repo-url>
 cd ui-parser
-cp .env.example .env   # измените при необходимости или оставьте значения по умолчанию для локальной разработки
+cp .env.example .env
 make up
 ```
 
@@ -145,44 +145,7 @@ npm run test
 
 ---
 
-## Структура проекта
-
-```
-services/
-  analyzer/           - внутренний gRPC-анализатор + клиент Ollama
-    app/
-      analyzer_service.py   - gRPC servicer
-      ollama_client.py      - HTTP-вызовы к Ollama
-      output_schema.py      - Pydantic-модели
-      prompts.py            - фабрика промптов
-    tests/
-backend/               - публичный gRPC API service
-  app/
-    grpc/              - gRPC-сервер, сервисеры screenshot_service.py, chat_service.py
-    models/            - SQLAlchemy-модели
-    storage.py         - вспомогательные функции presigned URL для MinIO
-    redis_client.py    - клиент Redis для потоков чата
-  tests/
-frontend/
-  src/
-    proto/             - gRPC-Web клиенты, сгенерированные типы и type-safe обёртки
-    store/             - Zustand-хранилища
-    pages/             - основные страницы приложения
-    components/        - основные компоненты и UI-примитивы
-      __tests__/       - тесты компонентов (Vitest)
-    hooks/
-      __tests__/       - тесты хуков (Vitest)
-proto/                 - файлы контрактов .proto
-infra/
-  envoy.yaml           - конфигурация Envoy gRPC-Web прокси
-docker-compose.yml
-```
-
----
-
 ## Примечания
 
-- Frontend общается с бэкендом исключительно через gRPC-Web посредством Envoy.  
-- Backend скачивает изображение из MinIO перед передачей байтов анализатору.  
-- Результаты анализа сохраняются в виде JSONB в Postgres; схема Pydantic в `output_schema.py` валидирует и нормализует вывод модели.  
+- Frontend общается с backend исключительно через gRPC-Web посредством Envoy.   
 - Контекст чата строится на основе последнего сохранённого анализа в виде дайджеста системного промпта; векторная база данных не используется.
