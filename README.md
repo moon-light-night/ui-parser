@@ -45,6 +45,16 @@ make up
 
 ---
 
+## Архитектурная документация
+
+- Общий индекс документации: [docs/README.md](docs/README.md)
+- C4 Context: [docs/c4-context.md](docs/c4-context.md)
+- C4 Container: [docs/c4-container.md](docs/c4-container.md)
+- ERD баз данных: [docs/erd.md](docs/erd.md)
+- Sequence diagrams: [docs/sequence-diagrams.md](docs/sequence-diagrams.md)
+
+---
+
 ## Настройка анализа через Ollama
 
 По умолчанию анализатор работает в **режиме заглушки** (детерминированные тестовые ответы).
@@ -113,7 +123,7 @@ make up
 
 ## Запуск тестов
 
-### Бэкенд (API service)
+### Backend
 
 ```bash
 cd backend
@@ -135,17 +145,10 @@ make test
 deactivate
 ```
 
-### Фронтенд
+### Frontend
 
 ```bash
 cd frontend
 npm i
 npm run test
 ```
-
----
-
-## Примечания
-
-- Frontend общается с backend исключительно через gRPC-Web посредством Envoy.   
-- Контекст чата строится на основе последнего сохранённого анализа в виде дайджеста системного промпта; векторная база данных не используется.
